@@ -42,6 +42,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true, // Lanza un error si hay propiedades no permitidas
     }),
   );
-  await app.listen(3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
 }
-void bootstrap();
+bootstrap();
