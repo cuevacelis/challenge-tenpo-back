@@ -1,110 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import {
   CreditCardInfoDto,
-  TransactionDto,
-  FilterCreditCardDto,
+  CreditCardTransactionQueryDto,
+  CreditCardSummaryResponse,
 } from './dto/credit-card.dto';
-import { v4 as uuidv4 } from 'uuid'; // Para generar IDs únicos
+import { mockCreditCardData } from './dto/mock-credit-card.data';
+import { PaginationDto } from '../benefit/dto/pagination.dto';
 
 @Injectable()
 export class CreditCardService {
   private creditCardData: CreditCardInfoDto;
 
   constructor() {
-    this.creditCardData = this.generateMockCreditCardData();
+    this.creditCardData = mockCreditCardData;
   }
 
-  private generateMockCreditCardData(): CreditCardInfoDto {
-    const transactions: TransactionDto[] = [];
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Generar transacciones para el mes actual y anterior
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(
-        currentYear,
-        currentMonth,
-        Math.floor(Math.random() * 28) + 1,
-      ); // Fechas aleatorias del mes actual
-      transactions.push({
-        id: uuidv4(),
-        description: `Compra en ${this.getRandomStore()}`,
-        amount: parseFloat((Math.random() * 200 + 5).toFixed(2)), // entre 5 y 205
-        date: date.toISOString().split('T')[0], // Formato YYYY-MM-DD
-      });
-    }
-
-    // Algunas transacciones del mes anterior para probar el filtrado por fecha
-    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-    for (let i = 0; i < 10; i++) {
-      const date = new Date(
-        prevYear,
-        prevMonth,
-        Math.floor(Math.random() * 28) + 1,
-      );
-      transactions.push({
-        id: uuidv4(),
-        description: `Compra antigua en ${this.getRandomStore()}`,
-        amount: parseFloat((Math.random() * 100 + 10).toFixed(2)),
-        date: date.toISOString().split('T')[0],
-      });
-    }
-
-    const totalLimit = 5000;
-    const consumedAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-    const amountToPay = consumedAmount * 0.8; // Simulación
-
-    // Calcular fecha de corte (por ejemplo, el día 20 del mes)
-    const cutOffDay = 20;
-    const cutOffDate = new Date(currentYear, currentMonth, cutOffDay);
-    if (today.getDate() > cutOffDay) {
-      cutOffDate.setMonth(cutOffDate.getMonth() + 1); // Si ya pasó la fecha de corte, es para el próximo mes
-    }
-
-    // Calcular fecha de pago (por ejemplo, 10 días después de la fecha de corte)
-    const paymentDueDate = new Date(cutOffDate);
-    paymentDueDate.setDate(paymentDueDate.getDate() + 10);
-
-    return {
-      cardNumber: 'XXXX-XXXX-XXXX-1234', // Mocked card number
-      totalLimit: totalLimit,
-      consumedAmount: parseFloat(consumedAmount.toFixed(2)),
-      amountToPay: parseFloat(amountToPay.toFixed(2)),
-      cutOffDate: cutOffDate.toISOString().split('T')[0],
-      paymentDueDate: paymentDueDate.toISOString().split('T')[0],
-      transactions: transactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      ), // Ordenar por fecha descendente
-    };
-  }
-
-  private getRandomStore(): string {
-    const stores = [
-      'Supermercado La Esquina',
-      'Tienda Departamental El Centro',
-      'Cafetería Express',
-      'Farmacia Salud+',
-      'Gasolinera Rapida',
-      'Restaurante Delicias',
-      'Librería El Saber',
-      'Cinepolis',
-      'Mercado Central',
-    ];
-    return stores[Math.floor(Math.random() * stores.length)];
-  }
-
-  getCreditCardSummaryAndTransactions(filterDto: FilterCreditCardDto): {
-    summary: Omit<CreditCardInfoDto, 'transactions'>;
-    transactions: TransactionDto[];
-    pagination: {
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    };
-  } {
+  getCreditCardSummaryAndTransactions(
+    filterDto: CreditCardTransactionQueryDto,
+    pagination: PaginationDto = { page: 1, limit: 10 },
+  ): CreditCardSummaryResponse {
     let filteredTransactions = [...this.creditCardData.transactions];
 
     // Aplicar filtros
@@ -142,19 +56,18 @@ export class CreditCardService {
     }
 
     // Paginación
-    const page = filterDto.page || 1;
-    const limit = filterDto.limit || 10;
-    const total = filteredTransactions.length;
-    const totalPages = Math.ceil(total / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
+    const totalItems = filteredTransactions.length;
+    const totalPages = Math.ceil(totalItems / (pagination.limit ?? 10));
+    const currentPage = Math.min(pagination.page ?? 1, totalPages || 1);
+    const startIndex = (currentPage - 1) * (pagination.limit ?? 10);
+    const endIndex = startIndex + (pagination.limit ?? 10);
 
     const paginatedTransactions = filteredTransactions.slice(
       startIndex,
       endIndex,
     );
 
-    const summary: Omit<CreditCardInfoDto, 'transactions'> = {
+    const summary: CreditCardSummaryResponse['summary'] = {
       cardNumber: this.creditCardData.cardNumber,
       totalLimit: this.creditCardData.totalLimit,
       consumedAmount: this.creditCardData.consumedAmount,
@@ -167,10 +80,12 @@ export class CreditCardService {
       summary,
       transactions: paginatedTransactions,
       pagination: {
-        total,
-        page,
-        limit,
+        total: totalItems,
+        page: currentPage,
+        limit: pagination.limit ?? 10,
         totalPages,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1,
       },
     };
   }
