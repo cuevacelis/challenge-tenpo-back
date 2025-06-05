@@ -6,6 +6,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Configurar CORS permisivo para desarrollo local
+  app.enableCors({
+    origin: true, // Permite todas las origenes
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
+
   // Configurar el prefijo global para todas las rutas
   app.setGlobalPrefix('dev/v1', {
     exclude: ['/'], // Excluir la ruta raíz si es necesario

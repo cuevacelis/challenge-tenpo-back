@@ -8,7 +8,47 @@ export enum BenefitType {
   ENTERTAINMENT = 'entertainment',
 }
 
+export enum BenefitColor {
+  ALL = '#6B7280', // gris
+  RESTAURANTS = '#EF4444', // rojo
+  SHOPPING = '#3B82F6', // azul
+  TRANSPORT = '#10B981', // verde
+  ENTERTAINMENT = '#8B5CF6', // morado
+}
+
+export class BenefitCategoryDto {
+  @ApiProperty({ description: 'ID único de la categoría' })
+  id: string;
+
+  @ApiProperty({ description: 'Nombre técnico de la categoría' })
+  name: string;
+
+  @ApiProperty({ description: 'Nombre para mostrar en la UI' })
+  displayName: string;
+
+  @ApiProperty({ description: 'Nombre del icono de Lucide React' })
+  iconName: string;
+
+  @ApiProperty({
+    enum: BenefitColor,
+    description: 'Color hexadecimal para el icono y elementos UI',
+    example: '#EF4444',
+  })
+  color: BenefitColor;
+}
+
+export class BenefitCategoriesResponseDto {
+  @ApiProperty({
+    type: [BenefitCategoryDto],
+    description: 'Lista de categorías disponibles',
+  })
+  categories: BenefitCategoryDto[];
+}
+
 export class BenefitItemDto {
+  @ApiProperty({ description: 'ID único del beneficio' })
+  id: string;
+
   @ApiProperty({ description: 'Nombre del beneficio' })
   name: string;
 
@@ -29,6 +69,13 @@ export class BenefitItemDto {
 
   @ApiProperty({ description: 'Nombre del icono de Lucide React' })
   iconName: string;
+
+  @ApiProperty({
+    enum: BenefitColor,
+    description: 'Color hexadecimal para el icono y elementos UI',
+    example: '#EF4444',
+  })
+  color: BenefitColor;
 }
 
 export class PaginationMetaDto {

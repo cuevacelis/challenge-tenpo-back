@@ -3,26 +3,26 @@ import {
   BenefitResponseDto,
   BenefitType,
   PaginationMetaDto,
+  BenefitCategoriesResponseDto,
 } from './dto/benefit.dto';
-import { PaginationDto } from './dto/pagination.dto';
-import { mockBenefits } from './dto/mock-benefits';
+import { GetBenefitsQueryDto } from './dto/pagination.dto';
+import { mockBenefits, mockCategories } from './dto/mock-benefits';
 
 @Injectable()
 export class BenefitService {
-  getBenefits(
-    type: BenefitType = BenefitType.ALL,
-    pagination: PaginationDto = { page: 1, limit: 10 },
-  ): BenefitResponseDto {
+  getBenefits(query: GetBenefitsQueryDto): BenefitResponseDto {
+    const { type = BenefitType.ALL, page = 1, limit = 10 } = query;
+
     const filteredBenefits =
       type === BenefitType.ALL
         ? mockBenefits
         : mockBenefits.filter((benefit) => benefit.type === type);
 
     const totalItems = filteredBenefits.length;
-    const totalPages = Math.ceil(totalItems / (pagination.limit ?? 10));
-    const currentPage = Math.min(pagination.page ?? 1, totalPages || 1);
-    const startIndex = (currentPage - 1) * (pagination.limit ?? 10);
-    const endIndex = startIndex + (pagination.limit ?? 10);
+    const totalPages = Math.ceil(totalItems / limit);
+    const currentPage = Math.min(page, totalPages || 1);
+    const startIndex = (currentPage - 1) * limit;
+    const endIndex = startIndex + limit;
 
     const paginatedBenefits = filteredBenefits.slice(startIndex, endIndex);
 
@@ -33,7 +33,7 @@ export class BenefitService {
       totalPages,
       totalItems,
       currentPage,
-      itemsPerPage: pagination.limit ?? 10,
+      itemsPerPage: limit,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
     };
@@ -45,6 +45,12 @@ export class BenefitService {
       selectedType: type,
       benefits: paginatedBenefits,
       pagination: paginationMeta,
+    };
+  }
+
+  getCategories(): BenefitCategoriesResponseDto {
+    return {
+      categories: mockCategories,
     };
   }
 

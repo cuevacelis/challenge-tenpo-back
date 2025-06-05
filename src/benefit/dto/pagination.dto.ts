@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, Min } from 'class-validator';
+import { IsNumber, IsOptional, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BenefitType } from './benefit.dto';
 
 export class PaginationDto {
   @ApiProperty({
@@ -26,4 +27,16 @@ export class PaginationDto {
   @IsNumber()
   @Min(1)
   limit?: number = 10;
+}
+
+export class GetBenefitsQueryDto extends PaginationDto {
+  @ApiProperty({
+    enum: BenefitType,
+    description: 'Tipo de beneficio para filtrar',
+    required: false,
+    default: BenefitType.ALL,
+  })
+  @IsOptional()
+  @IsEnum(BenefitType)
+  type?: BenefitType = BenefitType.ALL;
 }
